@@ -1,38 +1,67 @@
-import type { BaseEntity } from "@/shared/types";
-import type { FollowupStatus } from "@/shared/utils/constants";
+import type { FollowupAttempt } from "@/features/messages/types";
 
-export interface FollowUp extends BaseEntity {
-  upload_id: string;
-  customer_name: string;
-  phone: string;
-  email: string | null;
-  amount_due: number | null;
-  due_date: string | null;
-  notes: string | null;
-  status: FollowupStatus;
-  ai_draft: string | null;
-  draft_generated_at: string | null;
-  sent_at: string | null;
-  responded_at: string | null;
-  whatsapp_link: string | null;
-}
-
-export interface FollowUpDraft {
+export interface Contact {
   id: string;
+  user_id: string;
+  upload_id: string | null;
   customer_name: string;
-  phone: string;
-  amount_due: number | null;
+  phone_number: string;
+  total_amount: number | null;
+  paid_amount: number | null;
+  due_amount: number | null;
   due_date: string | null;
-  generated_draft: string;
-  edited_draft: string;
-  status: FollowupStatus;
+  workflow_status: WorkflowStatus;
+  next_followup_at: string | null;
+  raw_data: Record<string, string>;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface FollowUpStats {
-  total: number;
-  pending: number;
-  drafted: number;
-  sent: number;
-  responded: number;
-  closed: number;
+export type WorkflowStatus =
+  | "active"
+  | "opened"
+  | "contacted"
+  | "responded"
+  | "promised"
+  | "resolved"
+  | "ignored";
+
+export interface FollowupCandidate {
+  id: string;
+  user_id: string;
+  contact_id: string;
+  priority: CandidatePriority;
+  reason: string;
+  candidate_status: CandidateStatus;
+  generated_at: string;
+}
+
+export type CandidatePriority = "low" | "medium" | "high";
+
+export type CandidateStatus =
+  | "pending"
+  | "opened"
+  | "contacted"
+  | "responded"
+  | "promised"
+  | "resolved"
+  | "dismissed"
+  | "ignored";
+
+export type LifecycleStatus = CandidateStatus;
+
+export interface CandidateWithContact extends FollowupCandidate {
+  contact: Contact;
+}
+
+export interface OperationalQueueItem {
+  candidate: FollowupCandidate;
+  contact: Contact;
+  lastAttempt?: FollowupAttempt;
+}
+
+export interface OperationalQueue {
+  highPriority: OperationalQueueItem[];
+  mediumPriority: OperationalQueueItem[];
+  lowPriority: OperationalQueueItem[];
 }

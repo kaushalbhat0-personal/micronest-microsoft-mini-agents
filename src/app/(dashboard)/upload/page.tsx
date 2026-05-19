@@ -1,4 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/shared/components/ui/card";
+import { UploadForm } from "@/features/upload/components/upload-form";
 
 export default function UploadPage() {
   return (
@@ -13,11 +20,12 @@ export default function UploadPage() {
       <Card>
         <CardHeader>
           <CardTitle>Upload File</CardTitle>
+          <CardDescription>
+            Supported formats: .csv, .xlsx, .xls (max 10MB)
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Drag and drop your file here, or click to browse.
-          </p>
+          <UploadForm />
         </CardContent>
       </Card>
     </div>

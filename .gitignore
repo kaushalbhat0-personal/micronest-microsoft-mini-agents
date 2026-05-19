@@ -42,3 +42,6 @@ coverage/
 
 # Misc
 *.pem
+
+# Extension build output
+extension/dist/

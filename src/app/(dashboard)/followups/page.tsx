@@ -1,25 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { getOperationalQueue } from "@/features/operations/services/get-operational-queue";
+import { OperationalWorkspace } from "@/features/operations/components/operational-workspace";
 
-export default function FollowupsPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Follow-ups</h1>
-        <p className="text-muted-foreground">
-          Review and manage pending follow-ups.
-        </p>
-      </div>
+export default async function FollowupsPage() {
+  const queue = await getOperationalQueue();
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending Follow-ups</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No follow-ups yet. Upload a file to get started.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <OperationalWorkspace initialQueue={queue} />;
 }

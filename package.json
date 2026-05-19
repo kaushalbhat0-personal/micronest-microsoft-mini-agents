@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:extension": "node extension/build.js",
+    "build:extension:prod": "node extension/build.js --minify"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -31,6 +33,7 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.2.1",
@@ -54,6 +57,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "esbuild": "^0.28.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.8",

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { getCurrentUser } from "@/server/auth/get-user";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 
 const navItems = [
   { label: "Dashboard", href: "/" },
@@ -8,7 +10,13 @@ const navItems = [
   { label: "Settings", href: "/settings" },
 ] as const;
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const user = await getCurrentUser();
+
   return (
     <div className="flex min-h-screen">
       <aside className="w-64 border-r bg-muted/10 p-4 hidden md:flex flex-col gap-2">
@@ -26,6 +34,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="mt-auto border-t pt-4">
+          <p className="px-3 text-xs text-muted-foreground truncate">
+            {user?.email}
+          </p>
+          <SignOutButton />
+        </div>
       </aside>
       <main className="flex-1 p-6">{children}</main>
     </div>
