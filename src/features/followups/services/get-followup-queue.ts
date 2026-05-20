@@ -3,7 +3,7 @@ import type { CandidateWithContact, OperationalQueue, OperationalQueueItem } fro
 import type { FollowupAttempt } from "@/features/messages/types";
 import { buildOperationalQueue } from "./build-operational-queue";
 
-export async function getFollowupQueue(): Promise<OperationalQueue> {
+export async function getFollowupQueue(workspaceId?: string | null): Promise<OperationalQueue> {
   const supabase = await createServerSupabaseClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -11,12 +11,18 @@ export async function getFollowupQueue(): Promise<OperationalQueue> {
     return { highPriority: [], mediumPriority: [], lowPriority: [] };
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("followup_candidates")
     .select("*, contact:contact_id(*)")
     .eq("user_id", user.id)
     .in("candidate_status", ["pending", "opened", "contacted", "responded", "promised"])
     .order("priority", { ascending: false });
+
+  if (workspaceId) {
+    query = query.eq("workspace_id", workspaceId);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     return { highPriority: [], mediumPriority: [], lowPriority: [] };

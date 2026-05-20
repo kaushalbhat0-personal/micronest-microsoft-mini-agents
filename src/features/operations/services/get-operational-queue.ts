@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { CandidateWithContact, OperationalQueueItem } from "@/features/followups/types";
 import type { FollowupAttempt } from "@/features/messages/types";
 
-export async function getOperationalQueue(): Promise<OperationalQueueItem[]> {
+export async function getOperationalQueue(workspaceId?: string | null): Promise<OperationalQueueItem[]> {
   const supabase = await createServerSupabaseClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,12 +12,18 @@ export async function getOperationalQueue(): Promise<OperationalQueueItem[]> {
     return [];
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("followup_candidates")
     .select("*, contact:contact_id(*)")
     .eq("user_id", user.id)
     .in("candidate_status", ["pending", "opened", "contacted", "responded", "promised"])
     .order("priority", { ascending: false });
+
+  if (workspaceId) {
+    query = query.eq("workspace_id", workspaceId);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     return [];

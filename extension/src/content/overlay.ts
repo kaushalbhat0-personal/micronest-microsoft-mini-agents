@@ -13,6 +13,7 @@ interface OverlayContact {
   due_amount: number | null;
   due_date: string | null;
   workflow_status: string;
+  assigned_to?: string;
 }
 
 interface OverlayCandidate {
@@ -263,6 +264,7 @@ function renderOverlay(data: OverlayData) {
         </div>
       </div>
       ${contact ? `
+      <div class="assignee-info">${contact.assigned_to ? `Assigned to: ${contact.assigned_to}` : ""}</div>
       <div class="amount-row">
         ${contact.due_amount != null ? `<span class="amount">₹${Number(contact.due_amount).toLocaleString("en-IN")}</span>` : ""}
         ${contact.due_date ? `<span class="due-date">Due: ${new Date(contact.due_date).toLocaleDateString("en-IN")}</span>` : ""}
@@ -396,6 +398,7 @@ function getOverlayCSS(): string {
     .phone { font-size: 12px; color: #6b7280; margin-top: 1px; }
     .header-actions { display: flex; gap: 2px; flex-shrink: 0; }
     .badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 500; }
+    .assignee-info { padding: 0 12px 4px; font-size: 11px; color: #6b7280; }
     .amount-row {
       display: flex; align-items: center; gap: 12px;
       padding: 4px 12px 8px; font-size: 13px;

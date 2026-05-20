@@ -30,6 +30,7 @@ import type { MessagePreviewData } from "@/features/messages/components/message-
 import type { SendControllerSession } from "./send-controller";
 import type { ResumeSessionPayload } from "./resume-session-modal";
 import type { FailedAction } from "./failed-actions-queue";
+import { ErrorBoundary } from "@/shared/components/error-boundary";
 
 interface OperationalWorkspaceProps {
   initialQueue: OperationalQueueItem[];
@@ -315,17 +316,20 @@ export function OperationalWorkspace({ initialQueue }: OperationalWorkspaceProps
 
   if (totalCount === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Inbox className="size-12 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold">No pending follow-ups</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload a spreadsheet and confirm the import to generate follow-up candidates.
-        </p>
-      </div>
+      <ErrorBoundary name="OperationalWorkspace">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Inbox className="size-12 text-muted-foreground mb-4" />
+          <h2 className="text-lg font-semibold">No pending follow-ups</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Upload a spreadsheet and confirm the import to generate follow-up candidates.
+          </p>
+        </div>
+      </ErrorBoundary>
     );
   }
 
   return (
+    <ErrorBoundary name="OperationalWorkspace">
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       <div className="shrink-0 space-y-3 border-b p-4">
         <div className="flex items-center justify-between">
@@ -519,5 +523,6 @@ export function OperationalWorkspace({ initialQueue }: OperationalWorkspaceProps
         />
       )}
     </div>
+    </ErrorBoundary>
   );
 }

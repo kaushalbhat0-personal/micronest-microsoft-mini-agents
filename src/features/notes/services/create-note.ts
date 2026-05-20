@@ -9,7 +9,8 @@ export interface CreateNoteResult {
 
 export async function createNote(
   contactId: string,
-  note: string
+  note: string,
+  workspaceId?: string | null
 ): Promise<CreateNoteResult> {
   try {
     const supabase = await createServerActionSupabaseClient();
@@ -18,7 +19,7 @@ export async function createNote(
 
     const { error } = await supabase
       .from("contact_notes")
-      .insert({ user_id: user.id, contact_id: contactId, note });
+      .insert({ user_id: user.id, contact_id: contactId, note, ...(workspaceId ? { workspace_id: workspaceId } : {}) });
 
     if (error) return { success: false, error: error.message };
 

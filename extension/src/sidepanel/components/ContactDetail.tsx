@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import type { OperationalQueueItem } from "../../shared/types";
 import { useContactDetail } from "../hooks/useContactDetail";
 import { useNotes } from "../hooks/useNotes";
-import { updateFollowupStatus } from "../../shared/api";
+import { updateFollowupStatus, getContactAssignee, checkContactLock } from "../../shared/api";
 
 const EVENT_LABELS: Record<string, string> = {
   contact_imported: "Imported",
@@ -39,6 +39,17 @@ export function ContactDetail({ item, onStatusChange }: ContactDetailProps) {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [assignee, setAssignee] = useState<string>();
+  const [lockInfo, setLockInfo] = useState<string>();
+
+  useEffect(() => {
+    getContactAssignee(contact.id).then((result) => {
+      if (result?.user_email) setAssignee(result.user_email);
+    }).catch(() => {});
+    checkContactLock(contact.id).then((lock) => {
+      if (lock?.locked_by_name) setLockInfo(lock.locked_by_name);
+    }).catch(() => {});
+  }, [contact.id]);
 
   const handleStatusUpdate = useCallback(async (newStatus: string) => {
     setUpdatingStatus(newStatus);
@@ -87,6 +98,8 @@ export function ContactDetail({ item, onStatusChange }: ContactDetailProps) {
       <div className="sp-detail-header">
         <div className="sp-detail-name">{contact.customer_name}</div>
         <div className="sp-detail-phone">{contact.phone_number}</div>
+        {assignee && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Assigned to: {assignee}</div>}
+        {lockInfo && <div style={{ fontSize: 11, color: "#d97706" }}>Currently handled by {lockInfo}</div>}
         <div className="sp-detail-amount-row">
           {dueAmount != null && (
             <>

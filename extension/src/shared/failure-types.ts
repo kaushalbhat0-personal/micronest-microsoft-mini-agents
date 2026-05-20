@@ -52,7 +52,7 @@ function detectCategory(error: string, phoneNumber?: string): FailureCategory {
   if (lower.includes("disconnect") || lower.includes("not connected")) {
     return FailureCategory.WHATSAPP_DISCONNECTED;
   }
-  if (lower.includes("input not found") || lower.includes("not found") || lower.includes("dom")) {
+  if (lower.includes("input not found") || lower.includes("not found") || /\bdom\b/i.test(lower)) {
     return FailureCategory.DOM_NOT_FOUND;
   }
   if (lower.includes("timeout") || lower.includes("timed out")) {

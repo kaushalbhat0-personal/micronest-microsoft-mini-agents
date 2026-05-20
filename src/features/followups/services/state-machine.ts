@@ -26,6 +26,7 @@ export function getEventTypeForTransition(
   current: LifecycleStatus,
   next: LifecycleStatus
 ): string | null {
+  if (!canTransition(current, next)) return null;
   if (next === "dismissed") return "followup_dismissed";
   if (next === "ignored") return "marked_ignored";
   if (next === "resolved") return "marked_resolved";

@@ -10,6 +10,7 @@ import { getContactTimelineAction } from "@/features/timeline/services/get-conta
 import { ContactTimeline } from "./contact-timeline";
 import type { OperationalQueueItem, LifecycleStatus } from "@/features/followups/types";
 import type { ContactEvent } from "@/features/timeline/types";
+import { ErrorBoundary } from "@/shared/components/error-boundary";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
@@ -62,6 +63,7 @@ export function ContactDetailDrawer({ item, isOpen, onClose, onAction }: Contact
   if (!isOpen) return null;
 
   return (
+    <ErrorBoundary name="ContactDetailDrawer">
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-background border-l shadow-lg overflow-y-auto">
@@ -145,5 +147,6 @@ export function ContactDetailDrawer({ item, isOpen, onClose, onAction }: Contact
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

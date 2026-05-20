@@ -7,7 +7,8 @@ import type { ContactEventType } from "@/features/timeline/types";
 export async function logSessionEvent(
   contactId: string,
   eventType: ContactEventType,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  _workspaceId?: string | null
 ): Promise<void> {
   try {
     const supabase = await createServerActionSupabaseClient();
@@ -25,7 +26,8 @@ export async function logSessionEventBatch(
     contactId: string;
     eventType: ContactEventType;
     metadata?: Record<string, unknown>;
-  }>
+  }>,
+  _workspaceId?: string | null
 ): Promise<void> {
   try {
     const supabase = await createServerActionSupabaseClient();

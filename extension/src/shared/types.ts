@@ -122,3 +122,47 @@ export interface RecoveryStatus {
   session: SequentialSessionInfo | null;
   whatsappConnected: boolean;
 }
+
+export interface Workspace {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: string;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  role: "admin" | "operator" | "viewer";
+  joined_at: string;
+  user_email?: string;
+}
+
+export interface ContactLock {
+  id: string;
+  contact_id: string;
+  locked_by: string;
+  workspace_id: string;
+  acquired_at: string;
+  expires_at: string;
+  locked_by_name?: string;
+}
+
+export interface WorkspaceActivity {
+  id: string;
+  workspace_id: string;
+  actor_id: string;
+  activity_type: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  actor_name?: string;
+}
+
+export interface OperatorMetrics {
+  assignedContacts: number;
+  activeFollowups: number;
+  overduePromises: number;
+  resolvedToday: number;
+  activeSessions: number;
+}

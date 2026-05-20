@@ -9,6 +9,7 @@ import {
   signOut as apiSignOut,
   setSession,
   getCurrentSession,
+  getActiveWorkspace,
 } from "../shared/api";
 import { useAuth } from "./hooks/useAuth";
 import { FilterBar } from "./components/FilterBar";
@@ -16,6 +17,9 @@ import { QueueList } from "./components/QueueList";
 import { ContactDetail } from "./components/ContactDetail";
 import { RuntimeStatus } from "./components/RuntimeStatus";
 import { NextContactBar } from "./components/NextContactBar";
+import { RuntimeInspector } from "./components/RuntimeInspector";
+import { useDebugMode } from "../hooks/useDebugMode";
+import { traceMessage } from "../shared/message-trace";
 
 type View = "queue" | "detail";
 
@@ -31,6 +35,10 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SequentialSessionInfo | null>(null);
   const [extensionConnected, setExtensionConnected] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+  const { isDebug, toggleDebug } = useDebugMode();
 
   const filteredQueue = useMemo(() => {
     let items = queue;
@@ -73,6 +81,12 @@ export function App() {
         if (!cancelled) setLoading(false);
       }
     })();
+    getActiveWorkspace().then((w) => {
+      if (w) {
+        setWorkspaceId(w.id);
+        setWorkspaceName(w.name);
+      }
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [session]);
 
@@ -84,9 +98,13 @@ export function App() {
         if (!cancelled && status) {
           setSessionStatus(status.session);
           setExtensionConnected(true);
+          traceMessage("GET_RECOVERY_STATUS", "received", true, undefined, status);
         }
       } catch {
-        if (!cancelled) setExtensionConnected(false);
+        if (!cancelled) {
+          setExtensionConnected(false);
+          traceMessage("GET_RECOVERY_STATUS", "received", false);
+        }
       }
     }
     checkRecovery();
@@ -98,6 +116,7 @@ export function App() {
     const unsub = listenForSessionStatus((status) => {
       setSessionStatus(status);
       setExtensionConnected(true);
+      traceMessage("MICRONEST_SEQUENCE_STATUS", "received", true, undefined, { state: status.state, index: status.currentIndex });
     });
     return unsub;
   }, []);
@@ -135,17 +154,20 @@ export function App() {
   const handleQueueRefresh = useCallback(async () => {
     if (!getCurrentSession()) return;
     let cancelled = false;
+    const start = Date.now();
     setLoading(true);
     try {
       const items = await fetchOperationalQueue();
       if (!cancelled) {
         setQueue(items);
         await cacheQueue(items);
+        traceMessage("QUEUE_REFRESH", "received", true, Date.now() - start);
       }
     } catch {
       if (!cancelled) {
         const cached = await getCachedQueue();
         if (cached) setQueue(cached);
+        traceMessage("QUEUE_REFRESH", "received", false, Date.now() - start);
       }
     } finally {
       if (!cancelled) setLoading(false);
@@ -182,7 +204,7 @@ export function App() {
 
   return (
     <>
-      <Header onLogout={handleLogout} onRefresh={handleQueueRefresh} />
+      <Header workspaceName={workspaceName} onLogout={handleLogout} onRefresh={handleQueueRefresh} isDebug={isDebug} onToggleDebug={() => setShowDebug(s => !s)} />
 
       {view === "detail" && selectedItem ? (
         <div className="sp-detail" style={{ flex: 1, overflow: "hidden" }}>
@@ -216,16 +238,24 @@ export function App() {
         </div>
       )}
 
+      {showDebug && (
+        <RuntimeInspector
+          sessionStatus={sessionStatus}
+          extensionConnected={extensionConnected}
+        />
+      )}
+
       <BottomBar
         sessionStatus={sessionStatus}
         extensionConnected={extensionConnected}
         queueCount={queue.length}
+        workspaceId={workspaceId}
       />
     </>
   );
 }
 
-function Header({ onLogout, onRefresh }: { onLogout: () => void; onRefresh: () => void }) {
+function Header({ onLogout, onRefresh, workspaceName, isDebug, onToggleDebug }: { onLogout: () => void; onRefresh: () => void; workspaceName: string | null; isDebug: boolean; onToggleDebug: () => void }) {
   return (
     <div className="sp-header">
       <div className="sp-header-brand">
@@ -234,7 +264,25 @@ function Header({ onLogout, onRefresh }: { onLogout: () => void; onRefresh: () =
           <path d="M2 17l10 5 10-5" />
           <path d="M2 12l10 5 10-5" />
         </svg>
-        MicroNest
+        MicroNest{workspaceName && <span style={{ fontSize: 10, color: "var(--text-secondary)", marginLeft: 4 }}>{workspaceName}</span>}
+        {isDebug && (
+          <span
+            onClick={onToggleDebug}
+            style={{
+              marginLeft: 6,
+              padding: "1px 6px",
+              borderRadius: 8,
+              background: "rgba(217, 119, 6, 0.15)",
+              color: "#d97706",
+              fontSize: 9,
+              fontWeight: 600,
+              cursor: "pointer",
+              letterSpacing: "0.3px",
+            }}
+          >
+            Debug
+          </span>
+        )}
       </div>
       <div className="sp-header-actions">
         <button className="sp-btn-icon" onClick={onRefresh} title="Refresh queue">
@@ -304,10 +352,12 @@ function BottomBar({
   sessionStatus,
   extensionConnected,
   queueCount,
+  workspaceId,
 }: {
   sessionStatus: SequentialSessionInfo | null;
   extensionConnected: boolean;
   queueCount: number;
+  workspaceId: string | null;
 }) {
   const hasSession = !!sessionStatus && sessionStatus.state !== "completed" && sessionStatus.state !== "stopped";
 

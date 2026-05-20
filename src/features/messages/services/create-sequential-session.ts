@@ -25,7 +25,8 @@ export interface MarkSessionContactResult {
 }
 
 export async function createSequentialSession(
-  input: CreateSequentialSessionInput
+  input: CreateSequentialSessionInput,
+  workspaceId?: string | null
 ): Promise<CreateSequentialSessionResult> {
   try {
     const supabase = await createServerActionSupabaseClient();
@@ -45,6 +46,7 @@ export async function createSequentialSession(
         total_contacts: input.items.length,
         created_at: new Date().toISOString(),
         counters: { sent: 0, skipped: 0, failed: 0 },
+        ...(workspaceId ? { workspace_id: workspaceId } : {}),
       });
 
     if (insertError) {

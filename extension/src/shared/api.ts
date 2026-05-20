@@ -8,6 +8,11 @@ import type {
   OperationalQueueItem,
   RecoveryStatus,
   SequentialSessionInfo,
+  Workspace,
+  WorkspaceMember,
+  ContactLock,
+  WorkspaceActivity,
+  OperatorMetrics,
 } from "./types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -247,6 +252,8 @@ const CACHE_KEYS = {
   CONTACT_PREFIX: "micronest_contact_",
   TIMELINE_PREFIX: "micronest_timeline_",
   NOTES_PREFIX: "micronest_notes_",
+  WORKSPACE: "micronest_workspace",
+  MEMBERS_PREFIX: "micronest_members_",
 } as const;
 
 export async function cacheQueue(items: OperationalQueueItem[]): Promise<void> {
@@ -283,4 +290,149 @@ export async function cacheNotes(contactId: string, notes: ContactNote[]): Promi
 export async function getCachedNotes(contactId: string): Promise<ContactNote[] | null> {
   const result = await chrome.storage.local.get(`${CACHE_KEYS.NOTES_PREFIX}${contactId}`);
   return (result[`${CACHE_KEYS.NOTES_PREFIX}${contactId}`] as ContactNote[]) ?? null;
+}
+
+// --- Workspace ---
+
+export async function getActiveWorkspace(): Promise<Workspace | null> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return null;
+
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", session.user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (membership) {
+    const { data: workspace } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("id", membership.workspace_id)
+      .single();
+    if (workspace) return workspace as unknown as Workspace;
+  }
+
+  const { data: owned } = await supabase
+    .from("workspaces")
+    .select("*")
+    .eq("owner_id", session.user.id)
+    .limit(1)
+    .maybeSingle();
+
+  return owned as unknown as Workspace | null;
+}
+
+export async function getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return [];
+
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("*, user:user_id(email)")
+    .eq("workspace_id", workspaceId);
+
+  if (!data) return [];
+  return (data as unknown as WorkspaceMember[]).map((m) => ({
+    ...m,
+    user_email: (m as unknown as { user: { email: string } }).user?.email ?? "",
+  }));
+}
+
+export async function checkContactLock(contactId: string): Promise<ContactLock | null> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return null;
+
+  const { data } = await supabase
+    .from("contact_locks")
+    .select("*, locked_by:locked_by(id)")
+    .eq("contact_id", contactId)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (!data) return null;
+  return data as unknown as ContactLock;
+}
+
+export async function acquireContactLock(contactId: string, workspaceId: string): Promise<boolean> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return false;
+
+  const expiresAt = new Date(Date.now() + 30000).toISOString();
+
+  const { error } = await supabase.from("contact_locks").upsert(
+    { contact_id: contactId, locked_by: session.user.id, workspace_id: workspaceId, expires_at: expiresAt },
+    { onConflict: "contact_id" }
+  );
+
+  return !error;
+}
+
+export async function releaseContactLock(contactId: string): Promise<void> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return;
+
+  await supabase.from("contact_locks").delete().eq("contact_id", contactId).eq("locked_by", session.user.id);
+}
+
+export async function renewContactLock(contactId: string): Promise<boolean> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return false;
+
+  const expiresAt = new Date(Date.now() + 30000).toISOString();
+  const { error } = await supabase
+    .from("contact_locks")
+    .update({ expires_at: expiresAt })
+    .eq("contact_id", contactId)
+    .eq("locked_by", session.user.id);
+
+  return !error;
+}
+
+export async function getWorkspaceFeed(workspaceId: string, limit = 50): Promise<WorkspaceActivity[]> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return [];
+
+  const { data } = await supabase
+    .from("workspace_activity")
+    .select("*, actor:actor_id(email)")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (!data) return [];
+  return (data as unknown as WorkspaceActivity[]).map((a) => ({
+    ...a,
+    actor_name: (a as unknown as { actor: { email: string } }).actor?.email ?? "Unknown",
+  }));
+}
+
+export async function getContactAssignee(contactId: string): Promise<{ assigned_to: string | null; user_email?: string } | null> {
+  const supabase = getClient();
+  const session = currentSession;
+  if (!session?.user) return null;
+
+  const { data } = await supabase
+    .from("contacts")
+    .select("assigned_to")
+    .eq("id", contactId)
+    .single();
+
+  if (!data?.assigned_to) return { assigned_to: null };
+
+  const { data: userData } = await supabase
+    .from("auth.users")
+    .select("email")
+    .eq("id", data.assigned_to)
+    .single();
+
+  return { assigned_to: data.assigned_to, user_email: (userData as { email?: string })?.email };
 }
