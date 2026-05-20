@@ -5,6 +5,10 @@ import { Phone, Calendar, AlertCircle, MessageSquare } from "lucide-react";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type { OperationalQueueItem } from "@/features/followups/types";
+import type { RiskLevel } from "@/features/intelligence/types";
+import { RiskBadge } from "@/features/intelligence/components/RiskBadge";
+import { EscalationBadge } from "@/features/intelligence/components/EscalationBadge";
+import { SlaStatus } from "@/features/intelligence/components/SlaStatus";
 
 const PRIORITY_STYLES: Record<string, { dot: string; label: string }> = {
   high: { dot: "bg-red-500", label: "High" },
@@ -126,6 +130,9 @@ export const OperationCard = memo(function OperationCard({
               Follow-up: {new Date(contact.next_followup_at).toLocaleDateString("en-IN")}
             </span>
           )}
+          <RiskBadge level={(contact.risk_level ?? "low") as RiskLevel} />
+          <EscalationBadge level={contact.escalation_level ?? 0} />
+          <SlaStatus slaDueAt={contact.sla_due_at ?? undefined} />
         </div>
       </div>
     </div>

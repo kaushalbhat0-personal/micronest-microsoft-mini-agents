@@ -3,6 +3,7 @@ import type { OperationalQueueItem } from "../../shared/types";
 import { useContactDetail } from "../hooks/useContactDetail";
 import { useNotes } from "../hooks/useNotes";
 import { updateFollowupStatus, getContactAssignee, checkContactLock } from "../../shared/api";
+import { ContactSuggestion } from "./ContactSuggestion";
 
 const EVENT_LABELS: Record<string, string> = {
   contact_imported: "Imported",
@@ -100,6 +101,7 @@ export function ContactDetail({ item, onStatusChange }: ContactDetailProps) {
         <div className="sp-detail-phone">{contact.phone_number}</div>
         {assignee && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Assigned to: {assignee}</div>}
         {lockInfo && <div style={{ fontSize: 11, color: "#d97706" }}>Currently handled by {lockInfo}</div>}
+        <ContactSuggestion riskLevel="medium" escalationLevel={1} recoveryScore={65} intelligenceScore={72} intelligenceReasons={["High priority follow-up", "Promise due soon"]} />
         <div className="sp-detail-amount-row">
           {dueAmount != null && (
             <>

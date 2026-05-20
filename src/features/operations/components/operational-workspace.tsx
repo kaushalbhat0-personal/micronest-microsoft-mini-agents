@@ -31,17 +31,25 @@ import type { SendControllerSession } from "./send-controller";
 import type { ResumeSessionPayload } from "./resume-session-modal";
 import type { FailedAction } from "./failed-actions-queue";
 import { ErrorBoundary } from "@/shared/components/error-boundary";
+import { OperatorAssist } from "@/features/intelligence/components/OperatorAssist";
+import type { Recommendation, IntelligenceFeedItem } from "@/features/intelligence/types";
 
 interface OperationalWorkspaceProps {
   initialQueue: OperationalQueueItem[];
+  recommendation?: Recommendation | null;
+  prioritizedItems?: OperationalQueueItem[];
+  intelligenceFeed?: IntelligenceFeedItem[];
 }
 
-export function OperationalWorkspace({ initialQueue }: OperationalWorkspaceProps) {
+export function OperationalWorkspace({ initialQueue, recommendation, prioritizedItems, intelligenceFeed }: OperationalWorkspaceProps) {
   const router = useRouter();
   const parentRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const sortedQueue = useMemo(() => prioritizeQueue(initialQueue), [initialQueue]);
+  const sortedQueue = useMemo(() => {
+    if (prioritizedItems) return prioritizedItems;
+    return prioritizeQueue(initialQueue);
+  }, [initialQueue, prioritizedItems]);
   const { filters, updateFilter, resetFilters, hasActiveFilters, filteredItems } = useQueueFiltering(sortedQueue);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -331,11 +339,16 @@ export function OperationalWorkspace({ initialQueue }: OperationalWorkspaceProps
   return (
     <ErrorBoundary name="OperationalWorkspace">
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <div className="shrink-0 space-y-3 border-b p-4">
+      <div className="shrink-0 space-y-2 border-b p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight">Operations</h1>
           <OperationMetricsBar />
         </div>
+        {recommendation && (
+          <div className="max-w-md">
+            <OperatorAssist recommendation={recommendation} />
+          </div>
+        )}
         <QueueFilters
           filters={filters}
           onUpdateFilter={updateFilter}
@@ -441,7 +454,23 @@ export function OperationalWorkspace({ initialQueue }: OperationalWorkspaceProps
               onAction={handleAction}
             />
           ) : (
-            <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col overflow-y-auto">
+              {intelligenceFeed && intelligenceFeed.length > 0 && (
+                <div className="border-b p-4 pb-2">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Intelligence</h4>
+                  <div className="space-y-1">
+                    {intelligenceFeed.slice(0, 5).map((item) => (
+                      <div key={item.id} className="flex items-start gap-1.5 text-[11px]">
+                        <span className={`shrink-0 size-1.5 mt-1 rounded-full ${
+                          item.severity === "critical" ? "bg-red-500" :
+                          item.severity === "warning" ? "bg-amber-500" : "bg-blue-500"
+                        }`} />
+                        <span className="text-muted-foreground">{item.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex-1" />
               <div className="border-t p-4">
                 <ActivityFeed />

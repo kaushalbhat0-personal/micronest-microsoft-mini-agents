@@ -15,6 +15,12 @@ export interface Contact {
   raw_data: Record<string, string>;
   created_at: string;
   updated_at: string;
+  sla_due_at?: string | null;
+  escalation_level?: number;
+  promise_due_at?: string | null;
+  last_promise_broken_at?: string | null;
+  recovery_score?: number | null;
+  risk_level?: string | null;
 }
 
 export type WorkflowStatus =

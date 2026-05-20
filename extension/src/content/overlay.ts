@@ -14,6 +14,10 @@ interface OverlayContact {
   due_date: string | null;
   workflow_status: string;
   assigned_to?: string;
+  riskLevel?: string;
+  escalationLevel?: number;
+  promiseDueAt?: string;
+  slaDueAt?: string;
 }
 
 interface OverlayCandidate {
@@ -268,6 +272,11 @@ function renderOverlay(data: OverlayData) {
       <div class="amount-row">
         ${contact.due_amount != null ? `<span class="amount">₹${Number(contact.due_amount).toLocaleString("en-IN")}</span>` : ""}
         ${contact.due_date ? `<span class="due-date">Due: ${new Date(contact.due_date).toLocaleDateString("en-IN")}</span>` : ""}
+      </div>
+      <div class="risk-row">
+        ${contact.riskLevel === "high" || contact.riskLevel === "critical" ? `<span class="risk-badge risk-${contact.riskLevel}">${contact.riskLevel.toUpperCase()} RISK</span>` : ""}
+        ${contact.promiseDueAt && Date.now() > new Date(contact.promiseDueAt).getTime() ? `<span class="risk-badge risk-promise">Promise overdue</span>` : ""}
+        ${contact.slaDueAt && Date.now() > new Date(contact.slaDueAt).getTime() ? `<span class="risk-badge risk-sla">SLA Breached</span>` : ""}
       </div>` : ""}
       ${!contact ? '<div class="no-contact">No matching contact found</div>' : ""}
       <div class="actions">
@@ -405,6 +414,12 @@ function getOverlayCSS(): string {
     }
     .amount { font-weight: 600; font-family: "SF Mono", monospace; color: #dc2626; }
     .due-date { font-size: 11px; color: #6b7280; }
+    .risk-row { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
+    .risk-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .risk-high { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b40; }
+    .risk-critical { background: #fef2f2; color: #991b1b; border: 1px solid #ef444440; }
+    .risk-promise { background: #fff7ed; color: #9a3412; border: 1px solid #f9731640; }
+    .risk-sla { background: #fef2f2; color: #991b1b; border: 1px solid #ef444440; }
     .no-contact { padding: 8px 12px; font-size: 12px; color: #9ca3af; text-align: center; }
     .actions {
       display: flex; gap: 4px; padding: 4px 10px 6px; flex-wrap: wrap;

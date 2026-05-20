@@ -9,6 +9,7 @@ import { getAllFlags, toggleFlag, type FeatureFlag } from "@/shared/flags";
 import { isDebugMode } from "@/shared/debug";
 import { RealtimeDiag } from "@/features/observability/components/realtime-diag";
 import { LockingDiag } from "@/features/observability/components/locking-diag";
+import { IntelligenceCard } from "@/features/intelligence/components/IntelligenceCard";
 
 export default function HealthPage() {
   const logs = useMemo(() => getRecentLogs(1000), []);
@@ -21,7 +22,7 @@ export default function HealthPage() {
   const runtimeFailures = useMemo(() => logs.filter((l) => l.namespace === "runtime" && l.level === "error").length, [logs]);
   const failuresLastHour = useMemo(() => {
     return logs.filter((l) => l.namespace === "runtime" && l.level === "error" && l.timestamp >= oneHourAgo).length;
-  }, [logs]);
+  }, [logs, oneHourAgo]);
   const totalLogs = logs.length;
   const failureRate = totalLogs > 0 ? ((runtimeFailures / totalLogs) * 100).toFixed(1) : "0.0";
 
@@ -177,6 +178,8 @@ export default function HealthPage() {
             <p className={`font-mono font-semibold text-lg ${failedSessions > 0 ? "text-destructive" : ""}`}>{failedSessions}</p>
           </CardContent>
         </Card>
+
+        <IntelligenceCard />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">

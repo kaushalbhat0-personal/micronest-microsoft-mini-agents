@@ -9,7 +9,11 @@ import { getAvailableTransitions } from "@/features/followups/services/state-mac
 import { getContactTimelineAction } from "@/features/timeline/services/get-contact-timeline-action";
 import { ContactTimeline } from "@/features/timeline/components/contact-timeline";
 import { scheduleFollowup } from "@/features/operations/services/schedule-followup";
+import { RiskBadge } from "@/features/intelligence/components/RiskBadge";
+import { EscalationBadge } from "@/features/intelligence/components/EscalationBadge";
+import { SlaStatus } from "@/features/intelligence/components/SlaStatus";
 import type { OperationalQueueItem, LifecycleStatus } from "@/features/followups/types";
+import type { RiskLevel } from "@/features/intelligence/types";
 import type { ContactEvent } from "@/features/timeline/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -110,7 +114,13 @@ export function OperationDetailPanel({ item, onClose, onAction }: OperationDetai
           <span className="text-[10px] px-1.5 py-0.5 rounded font-medium border bg-muted text-muted-foreground">
             {STATUS_LABELS[candidate.candidate_status] ?? candidate.candidate_status}
           </span>
+          <RiskBadge level={(contact.risk_level ?? "low") as RiskLevel} />
+          <EscalationBadge level={contact.escalation_level ?? 0} />
+          <SlaStatus slaDueAt={contact.sla_due_at ?? undefined} />
         </div>
+        {(contact.recovery_score !== null && contact.recovery_score !== undefined) && (
+          <p className="text-[10px] text-muted-foreground">Recovery Score: {contact.recovery_score}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-2 text-xs">
           {dueAmount && (
